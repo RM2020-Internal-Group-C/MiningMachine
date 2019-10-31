@@ -31,8 +31,9 @@ static const CANConfig cancfg = {
 static CANRxFrame rxmsg;
 static CANTxFrame txmsg;
 static volatile int16_t encoder[4];
+
 static const PWMConfig pwmcfg = {1000000,
-                                 10,
+                                 20000,
                                  NULL,
                                  {{PWM_OUTPUT_ACTIVE_HIGH, NULL},
                                   {PWM_OUTPUT_DISABLED, NULL},
@@ -40,6 +41,7 @@ static const PWMConfig pwmcfg = {1000000,
                                   {PWM_OUTPUT_DISABLED, NULL}},
                                  0,
                                  0};
+
 
 // i stands for the index of motor, respectively 0, 1, 2, 3; targetSpeed
 void setSpeed(int i, int target)
@@ -95,7 +97,7 @@ int main(void)
     canStart(&CAND1, &cancfg);
 
     pwmStart(&PWMD3, &pwmcfg);
-    pwmEnableChannel(&PWMD3, 0, 3);
+
 
     txmsg.DLC = 8;
     txmsg.IDE = CAN_IDE_STD;
@@ -116,6 +118,11 @@ int main(void)
 
     while (true)
     {
+        //pwmEnableChannel(&PWMD3, 0, 1778); //open
+        //chThdSleepMilliseconds(1000);
+        pwmEnableChannel(&PWMD3, 0, 2150);  //close
+        //chThdSleepMilliseconds(1000);
+    
         while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rxmsg, TIME_IMMEDIATE) ==
                MSG_OK)
         {
