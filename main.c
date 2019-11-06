@@ -22,9 +22,6 @@ float rccheck;
 float PIDcheck2;
 float PIDcheck3;
 
-//static const float RCToMotorRatio = 400 / 660;
-
-//int16_t const maxSpeed = 300;
 
 static const PWMConfig pwmcfg = {1000000,
                                  10,
@@ -38,41 +35,7 @@ static const PWMConfig pwmcfg = {1000000,
 
 // i stands for the index of motor, respectively 0, 1, 2, 3; targetSpee
 
-void pneumaticOpen5()
-{
-    palSetPadMode(GPIOA, 8, PAL_MODE_OUTPUT_PUSHPULL);
-    palWritePad(GPIOA, 8, PAL_HIGH);
-}
 
-void pneumaticClose5()
-{
-    palSetPadMode(GPIOA, 8, PAL_MODE_OUTPUT_PUSHPULL);
-    palWritePad(GPIOA, 8, PAL_LOW);
-}
-
-void pneumaticOpen4()
-{
-    palSetPadMode(GPIOA, 9, PAL_MODE_OUTPUT_PUSHPULL);
-    palWritePad(GPIOA, 9, PAL_HIGH);
-}
-
-void pneumaticClose4()
-{
-    palSetPadMode(GPIOA, 9, PAL_MODE_OUTPUT_PUSHPULL);
-    palWritePad(GPIOA, 9, PAL_LOW);
-}
-
-void pneumaticOpen3()
-{
-    palSetPadMode(GPIOA, 9, PAL_MODE_OUTPUT_PUSHPULL);
-    palWritePad(GPIOA, 9, PAL_HIGH);
-}
-
-void pneumaticClose3()
-{
-    palSetPadMode(GPIOA, 9, PAL_MODE_OUTPUT_PUSHPULL);
-    palWritePad(GPIOA, 9, PAL_LOW);
-}
 
 
 int main(void)
@@ -99,14 +62,6 @@ int main(void)
     // Initialize dbus
     // RCInit();
 
-    //Ouptput HIGH at PB3
-    palSetPadMode(GPIOA, 8, PAL_MODE_OUTPUT_PUSHPULL);
-    palSetPadMode(GPIOA, 9, PAL_MODE_OUTPUT_PUSHPULL);
-    palSetPadMode(GPIOA, 10, PAL_MODE_OUTPUT_PUSHPULL);
-
-    palWritePad(GPIOA, 8, PAL_HIGH);
-    palWritePad(GPIOA, 9, PAL_LOW);
-    palWritePad(GPIOA, 10, PAL_HIGH);
 
 
     // PID Initialize  wheelStruct; maxOutputCurrent; kp; ki; kd
@@ -116,13 +71,12 @@ int main(void)
 
     while (true)
     {
+        
         //movementControl(RCGet()->channel3, RCGet()->channel2, RCGet()->channel0);
-        palSetLine(LINE_LED);
         // rccheck = RCGet()->channel3*400/660;
         // PIDcheck1 = pidWheel[1].errNOW;
         // PIDcheck2 = pidWheel[1].set;
         // PIDcheck3 = pidWheel[1].get;
         chThdSleepMilliseconds(5);
-        palClearLine(LINE_LED);
     }
 }

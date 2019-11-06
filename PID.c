@@ -24,19 +24,21 @@ void PIDInit(pid_t *pid, int maxOut, float kp, float ki, float kd)
 
 // float absp(float i) { return (i < 0) ? -i : i; }
 
-float PIDSet(pid_t *pid, int get, int set)
+float PIDDir(pid_t *pid, int get, int set)
 {
     pid->get = get;
-    if(((pid->get - pid->lastget) % 8192) < (8 - ((pid->get - pid->lastget) % 8192)))
+    int a = (pid->get - pid->lastget + 8192) % 8192;
+    int b = 8192 - a;
+    if(a > b)
     {
-        pid->pDirection += ((pid->get - pid->lastget)%8192);
+        pid->Direction -= a;
     }
-    else if(((pid->get - pid->lastget) % 8192) > (8 - ((pid->get - pid->lastget) % 8192)))
+    else if(a < b)
     {
-        pid->nDirection += (8 - ((pid->get - pid->lastget)%8192));
+        pid->Direction += b;
     }
     pid->set = set;
-    pid->errNOW = set - pid->pDirection;
+    pid->errNOW = set - pid->Direction;
     pid->p = pid->errNOW * pid->kp;
     pid->i += pid->errNOW * pid->ki;
     pid->d = (pid->errNOW - pid->errLAST) * pid->kd;
@@ -45,4 +47,11 @@ float PIDSet(pid_t *pid, int get, int set)
     pid->lastget = pid->get;
     clamp(&pid->out, pid->maxOut);
     return pid->out;
+}
+
+
+
+int PIDcheck(pid_t *pid)
+{
+    return pid->Direction;
 }

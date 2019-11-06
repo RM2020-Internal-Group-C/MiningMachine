@@ -5,12 +5,14 @@
 #include "hal.h"
 
 
-int16_t check;
+int check;
 
 CANTxFrame txmsg;
 CANRxFrame rxmsg;
-int motorSpeed[4];
-float result[4] = {0, 0, 0, 0};
+int motorSpeed[2];
+int motorDirection[2];
+float SpeedResult[2] = {0, 0};
+float DirectionResult[2] = {0, 0};
 uint16_t rxcnt[4] = {0};
 static const CANConfig cancfg = {
     CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
@@ -28,7 +30,9 @@ static THD_FUNCTION(can_rx_thd, p)
             // receiving rpm
             if (rxmsg.SID == 0x201)
             {
-                motorSpeed[0] = rxmsg.data8[1] << 8 | rxmsg.data8[0];
+                respondCnt++;
+                motorSpeed[0] = rxmsg.data8[0] << 8 | rxmsg.data8[1];
+                motorDirection[0] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
                 rxcnt[0]++;
             }
             // if (rxmsg.SID == 0x202)
@@ -51,9 +55,11 @@ static THD_FUNCTION(can_tx_thd, p)
         txmsg.IDE = CAN_IDE_STD;
         txmsg.RTR = CAN_RTR_DATA;
         txmsg.SID = 0x200;
-        setSpeed(0, 50000);
+        setSpeed(0, 150000);
+        check = PIDcheck(&pidmotor[0]);
+        
         canTransmitTimeout(&CAND1, CAN_ANY_MAILBOX, &txmsg, TIME_MS2I(1));
-        chThdSleepMilliseconds(5);
+        chThdSleepMilliseconds(1);
     }
 };
 
@@ -74,7 +80,7 @@ float motorSpeedGet(int i)
 
 void motorInit(void)
 {
-    PIDInit(&pidmotor[0], MAX_SPEED, 5, 0, 0);
+    PIDInit(&pidmotor[0], MAX_SPEED, 1, 0, 0);
     canStart(&CAND1, &cancfg);
 
     chThdCreateStatic(can_rx_thd_wa,
