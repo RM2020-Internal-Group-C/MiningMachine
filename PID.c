@@ -36,7 +36,7 @@ int PIDDir(pid_t *pid, int get, int set)
     pid->dget = get;
     int a = (pid->dget - pid->dlastget + 8192) % 8192;
     int b = 8192 - a;
-    if(a > 50 && b >50){
+    if(pid->dget != pid->dlastget){
         if(a > b)
         {
             pid->direction -= a / 1024;
@@ -50,11 +50,22 @@ int PIDDir(pid_t *pid, int get, int set)
     pid->derrNOW = set - pid->direction;
     pid->dp = pid->derrNOW * pid->dkp;
     pid->di += pid->derrNOW * pid->dki;
+    clamp(&pid->di, 10000);
     pid->dd = (pid->derrNOW - pid->derrLAST) * pid->dkd;
     pid->dout = pid->dp + pid->di + pid->dd;
     pid->derrLAST = pid->derrNOW;
     pid->dlastget = pid->dget;
-    return pid->dout;
+    if(pid->dout > 100)
+    {
+        return pid->dout;
+    }
+    else
+    {
+        return 0;
+    }
+
+    
+
 }
 
 float PIDSpe(pid_t *pid, int get, int set)

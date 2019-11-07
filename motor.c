@@ -38,7 +38,6 @@ static THD_FUNCTION(can_rx_thd, p)
             //     motorSpeed[1] = rxmsg.data8[1] << 8 | rxmsg.data8[0];
             //     rxcnt[1]++;
             // }
-
         }
     }
 }
@@ -53,7 +52,7 @@ static THD_FUNCTION(can_tx_thd, p)
         txmsg.IDE = CAN_IDE_STD;
         txmsg.RTR = CAN_RTR_DATA;
         txmsg.SID = 0x200;
-        setSpeed(0, 15000);
+        setSpeed(0, 5000);
         check = PIDcheck(&pidmotor[0]);
         
         canTransmitTimeout(&CAND1, CAN_ANY_MAILBOX, &txmsg, TIME_MS2I(1));
@@ -80,7 +79,7 @@ float motorSpeedGet(int i)
 void motorInit(void)
 {
     PIDsInit(&pidmotor[0], MAX_SPEED, 10, 0.3, 25);
-    PIDdInit(&pidmotor[0], 1, 0, 0);
+    PIDdInit(&pidmotor[0], 2, 0, 0.5);
     canStart(&CAND1, &cancfg);
 
     chThdCreateStatic(can_rx_thd_wa,
