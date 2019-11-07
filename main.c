@@ -106,7 +106,7 @@ int main(void) {
     inputA3 = palReadPad(GPIOA, 3);
     inputA4 = palReadPad(GPIOA, 4);
 
-    if (rcValue != 0) {
+    if (rcValue > 0 && rcValue < 5) {
       gripperReset();       // gripper goes to the starting position
       gripperGoTo(rcValue); // gripper goes to the designated position
                             // put down the gripper (rotating the gripper)
