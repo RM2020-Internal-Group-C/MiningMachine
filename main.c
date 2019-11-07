@@ -11,6 +11,8 @@
 #include "ch.h"
 #include "uart.h"
 #include "hal.h"
+#include "miningMachine_motor.h"
+
 
 // Calculation of BRP:
 // Max APB1 clock Frequency: 36MHz
@@ -19,19 +21,8 @@
 
 float check;
 uint8_t rcValue;
-
-//static const float RCToMotorRatio = 400 / 660;
-
-static int16_t result[4] = {0, 0, 0, 0};
-//int16_t const maxSpeed = 300;
-
-static const CANConfig cancfg = {
-    CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
-    CAN_BTR_SJW(0) | CAN_BTR_TS2(1) | CAN_BTR_TS1(8) | CAN_BTR_BRP(2)};
-
-static CANRxFrame rxmsg;
-static CANTxFrame txmsg;
-static volatile int16_t encoder[4];
+float PIDcheck2;
+float PIDcheck3;
 
 //testing GPIO input
 static volatile uint8_t inputA1 = 0;
@@ -49,41 +40,38 @@ static const PWMConfig pwmcfg = {1000000,
                                  0,
                                  0};
 
-
-// i stands for the index of motor, respectively 0, 1, 2, 3; targetSpeed
-void setSpeed(int i, int target)
+void gripperOpen(void)
 {
-    result[i] = PIDSet(&pidWheel[i], encoder[i], target);
-    txmsg.data8[i * 2] = (int)result[i] >> 8;
-    txmsg.data8[i * 2 + 1] = (int)result[i] & 0xFF;
+    pwmEnableChannel(&PWMD3, 0, 1778); //open
+    chThdSleepMilliseconds(1000);
 }
-// speedX: X Direction SpeedY: Y Direction SpeedA: Angular Speed
-void movementControl(float speedX, float speedY, float speedA)
+
+void gripperClose(void)
 {
-    float speed0 = speedX + speedY + speedA;
-    float speed1 = speedX - speedY - speedA;
-    float speed2 = speedX - speedY + speedA;
-    float speed3 = speedX + speedY - speedA;
+    pwmEnableChannel(&PWMD3, 0, 2150);  //close
+    chThdSleepMilliseconds(1000);
+}
 
-    float max = speed0;
-    if (max < speed1)
-        max = speed1;
-    if (max < speed2)
-        max = speed2;
-    if (max < speed3)
-        max = speed3;
+void gripperReset(void)
+{   
+    gripperOpen();
+    while(palReadPad(GPIOA, 1) != 0)
+        MiningMachine_goback();
+    MiningMachine_stop();
+}
 
-    if (max > 400)
+void gripperGoTo(uint8_t location)
+{
+    if (location == 1) return;
+    else
     {
-        speed0 = speed0 / max * 400;
-        speed1 = speed1 / max * 400;
-        speed2 = speed2 / max * 400;
-        speed3 = speed3 / max * 400;
+        while(palReadPad(GPIOA, location) != 0 && palReadPad(GPIOA, 4) != 0)
+        {
+            MiningMachine_move();
+        }
+        MiningMachine_stop();
     }
-    setSpeed(0, speed0);
-    setSpeed(1, -speed1);
-    setSpeed(2, speed2);
-    setSpeed(3, -speed3);
+    
 }
 
 int main(void)
@@ -101,24 +89,10 @@ int main(void)
     AFIO->MAPR |= AFIO_MAPR_CAN_REMAP_REMAP2;
     // DBUS REMAP
     AFIO->MAPR |= AFIO_MAPR_USART1_REMAP;
-    canStart(&CAND1, &cancfg);
-
+    // Start pwm
     pwmStart(&PWMD3, &pwmcfg);
-
-
-    txmsg.DLC = 8;
-    txmsg.IDE = CAN_IDE_STD;
-    txmsg.RTR = CAN_RTR_DATA;
-    txmsg.SID = 0x200;
-
-    // Initialize dbus
+    // Initialize UART
     UART_Init();
-
-    // PID Initialize  wheelStruct; maxOutputCurrent; kp; ki; kd
-    PIDInit(&pidWheel[0], 2000, 5, 0, 0);
-    PIDInit(&pidWheel[1], 2000, 5, 0, 0);
-    PIDInit(&pidWheel[2], 2000, 5, 0, 0);
-    PIDInit(&pidWheel[3], 2000, 5, 0, 0);
 
     /***************************************************************
      ****************************四轮***********************************/
@@ -130,54 +104,32 @@ int main(void)
         //pwmEnableChannel(&PWMD3, 0, 2150);  //close
         //chThdSleepMilliseconds(1000);
 
-
         //testing
         rcValue = *UART_Get();
         palSetLine(LINE_LED);
         palSetPad(GPIOA, 8);
         
-        //testing GPIO input
+        //GPIO input testing
         inputA1 = palReadPad(GPIOA, 1);
         inputA2 = palReadPad(GPIOA, 2);
         inputA3 = palReadPad(GPIOA, 3);
         inputA4 = palReadPad(GPIOA, 4);
 
-
-
-        while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rxmsg, TIME_IMMEDIATE) == MSG_OK)
+        if(rcValue != 0)
         {
-            // receiving rpm
-            if (rxmsg.SID == 0x201)
-            {
-                encoder[0] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
-                encoder[0] = (encoder[0]) / 19;
-            }
-            if (rxmsg.SID == 0x202)
-            {
-                encoder[1] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
-                encoder[1] = (encoder[1]) / 19;
-            }
-            if (rxmsg.SID == 0x203)
-            {
-                encoder[2] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
-                encoder[2] = (encoder[2]) / 19;
-            }
-            if (rxmsg.SID == 0x204)
-            {
-                encoder[3] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
-                encoder[3] = (encoder[3]) / 19;
-            }
-
-            //  txmsg.data8[2] = (int)200 >> 8;
-            //  txmsg.data8[3] = (int)200 & 0xFF;
-
-            // move
-            //movementControl(RCGet()->channel3, RCGet()->channel2, RCGet()->channel0);
-
-            
-
-            canTransmitTimeout(&CAND1, CAN_ANY_MAILBOX, &txmsg, TIME_MS2I(1));
+            gripperReset();             //gripper goes to the starting position
+            gripperGoTo(rcValue);       //gripper goes to the designated position
+                                        //put down the gripper (rotating the gripper)
+            gripperClose();             //close the gripper
+            chThdSleepSeconds(3);
+                                        //pick up the box (rotating the gripper)
+                                        //put down the empty box (rotating the gripper)
+            gripperOpen();              //lose the grip
+            chThdSleepSeconds(3);       
+                                        //raise up the gripper (rotating the gripper)
+            gripperReset();             //go back to the starting position
         }
-        chThdSleepMilliseconds(1);
+        
+
     }
 }

@@ -18,17 +18,7 @@ static void rxend(UARTDriver *uartp)
 }
 static UARTConfig uartcfg = {
     NULL, NULL, rxend, NULL, NULL, 100000, USART_CR1_PCE, 0, 0};
-/*
-static void RCReset(void)
-{
-    rcCtrl.channel0 = 0;
-    rcCtrl.channel1 = 0;
-    rcCtrl.channel2 = 0;
-    rcCtrl.channel3 = 0;
-    rcCtrl.s1 = 0;
-    rcCtrl.s2 = 0;
-}
-*/
+
 
 static void UART_Reset(void)
 {
