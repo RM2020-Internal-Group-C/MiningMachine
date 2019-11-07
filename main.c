@@ -9,7 +9,7 @@
  */
 #include "PID.h"
 #include "ch.h"
-#include "dbus.h"
+#include "uart.h"
 #include "hal.h"
 
 // Calculation of BRP:
@@ -18,6 +18,7 @@
 // Nominal bit time: 12t_q
 
 float check;
+uint8_t rcValue;
 
 //static const float RCToMotorRatio = 400 / 660;
 
@@ -31,6 +32,12 @@ static const CANConfig cancfg = {
 static CANRxFrame rxmsg;
 static CANTxFrame txmsg;
 static volatile int16_t encoder[4];
+
+//testing GPIO input
+static volatile uint8_t inputA1 = 0;
+static volatile uint8_t inputA2 = 0;
+static volatile uint8_t inputA3 = 0;
+static volatile uint8_t inputA4 = 0;
 
 static const PWMConfig pwmcfg = {1000000,
                                  20000,
@@ -105,7 +112,7 @@ int main(void)
     txmsg.SID = 0x200;
 
     // Initialize dbus
-    RCInit();
+    UART_Init();
 
     // PID Initialize  wheelStruct; maxOutputCurrent; kp; ki; kd
     PIDInit(&pidWheel[0], 2000, 5, 0, 0);
@@ -118,13 +125,26 @@ int main(void)
 
     while (true)
     {
-        //pwmEnableChannel(&PWMD3, 0, 1778); //open
+        pwmEnableChannel(&PWMD3, 0, 1778); //open
         //chThdSleepMilliseconds(1000);
-        pwmEnableChannel(&PWMD3, 0, 2150);  //close
+        //pwmEnableChannel(&PWMD3, 0, 2150);  //close
         //chThdSleepMilliseconds(1000);
-    
-        while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rxmsg, TIME_IMMEDIATE) ==
-               MSG_OK)
+
+
+        //testing
+        rcValue = *UART_Get();
+        palSetLine(LINE_LED);
+        palSetPad(GPIOA, 8);
+        
+        //testing GPIO input
+        inputA1 = palReadPad(GPIOA, 1);
+        inputA2 = palReadPad(GPIOA, 2);
+        inputA3 = palReadPad(GPIOA, 3);
+        inputA4 = palReadPad(GPIOA, 4);
+
+
+
+        while (canReceive(&CAND1, CAN_ANY_MAILBOX, &rxmsg, TIME_IMMEDIATE) == MSG_OK)
         {
             // receiving rpm
             if (rxmsg.SID == 0x201)
@@ -152,7 +172,9 @@ int main(void)
             //  txmsg.data8[3] = (int)200 & 0xFF;
 
             // move
-            movementControl(RCGet()->channel3, RCGet()->channel2, RCGet()->channel0);
+            //movementControl(RCGet()->channel3, RCGet()->channel2, RCGet()->channel0);
+
+            
 
             canTransmitTimeout(&CAND1, CAN_ANY_MAILBOX, &txmsg, TIME_MS2I(1));
         }

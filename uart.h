@@ -5,7 +5,7 @@
 #define RC_CH_VALUE_MIN ((uint16_t)364)
 #define RC_CH_VALUE_OFFSET ((uint16_t)1024)
 #define RC_CH_VALUE_MAX ((uint16_t)1684)
-#define DBUS_BUFFER_SIZE ((uint8_t)18)
+#define DBUS_BUFFER_SIZE ((uint8_t)1)
 #define UART_DRIVER &UARTD1
 /*
     channel 0 : right horizontal
@@ -15,6 +15,7 @@
     s1 left switch
     s2 right switch
 */
+/*
 typedef struct
 {
     int16_t channel0;
@@ -24,7 +25,8 @@ typedef struct
     uint8_t s1;
     uint8_t s2;
 } RC_control_t;
-
-void RCInit(void);
-RC_control_t *RCGet(void);
+*/
+void UART_Init(void);
+void clearRxBuffer(void);
+uint8_t *UART_Get(void);
 #endif
