@@ -2,7 +2,7 @@
 #define __MOTOR_H_
 #include "stdint.h"
 
-#define MAX_SPEED       10000
+#define MAX_SPEED       31000
 float motorSpeedGet(int i);
 void motorInit(void);
 void setSpeed(int i, int target);

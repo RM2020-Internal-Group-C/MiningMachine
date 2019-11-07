@@ -55,7 +55,7 @@ int PIDDir(pid_t *pid, int get, int set)
     pid->dout = pid->dp + pid->di + pid->dd;
     pid->derrLAST = pid->derrNOW;
     pid->dlastget = pid->dget;
-    if(pid->dout > 100)
+    if(pid->dout > 800 || pid->dout < -800)
     {
         return pid->dout;
     }
@@ -75,7 +75,7 @@ float PIDSpe(pid_t *pid, int get, int set)
     pid->serrNOW = set - get;
     pid->sp = pid->serrNOW * pid->skp;
     pid->si += pid->serrNOW * pid->ski;
-    clamp(&pid->si, 8000);
+    clamp(&pid->si, 10000);
     pid->sd = (pid->serrNOW - pid->serrLAST) * pid->skd;
     pid->sout = pid->sp + pid->si + pid->sd;
     pid->serrLAST = pid->serrNOW;
