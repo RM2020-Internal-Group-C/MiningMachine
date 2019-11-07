@@ -4,25 +4,39 @@
 
 typedef struct
 {
-    float kp;
-    float ki;
-    float kd;
-    int set;
-    int get;
-    int lastget;
-    float errNOW;
-    float errLAST;
-    float out;
-    float maxOut;
-    float p;
-    float i;
-    float d;
-    int Direction;
+    float dkp;
+    float dki;
+    float dkd;
+    int dset;
+    int dget;
+    int dlastget;
+    float derrNOW;
+    float derrLAST;
+    int dout;
+    float dp;
+    float di;
+    float dd;
+    int direction;
+
+    float skp;
+    float ski;
+    float skd;
+    int sset;
+    int sget;
+    float serrNOW;
+    float serrLAST;
+    float sout;
+    float smaxOut;
+    float sp;
+    float si;
+    float sd;
 } pid_t;
 //Initiallize pid: maxOut:maximum outpus, Kp, Ki, Kd 
-void PIDInit(pid_t *pid, int maxOut, float kp, float ki, float kd);
+void PIDdInit(pid_t *pid, float kp, float ki, float kd);
+void PIDsInit(pid_t *pid, int maxOut, float kp, float ki, float kd);
 
-float PIDSet(pid_t *pid, int get, int set);
+int PIDDir(pid_t *pid, int get, int set);
+float PIDSpe(pid_t *pid, int get, int set);
 
 int PIDcheck(pid_t *pid);
 

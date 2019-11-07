@@ -14,44 +14,65 @@ static void clamp(float *a, float max)
     }
 }
 
-void PIDInit(pid_t *pid, int maxOut, float kp, float ki, float kd)
+void PIDdInit(pid_t *pid, float kp, float ki, float kd)
 {
-    pid->kp = kp;
-    pid->ki = ki;
-    pid->kd = kd;
-    pid->maxOut = maxOut;
+    pid->dkp = kp;
+    pid->dki = ki;
+    pid->dkd = kd;
+}
+
+void PIDsInit(pid_t *pid, int maxOut, float kp, float ki, float kd)
+{
+    pid->skp = kp;
+    pid->ski = ki;
+    pid->skd = kd;
+    pid->smaxOut = maxOut;
 }
 
 // float absp(float i) { return (i < 0) ? -i : i; }
 
-float PIDDir(pid_t *pid, int get, int set)
+int PIDDir(pid_t *pid, int get, int set)
 {
-    pid->get = get;
-    int a = (pid->get - pid->lastget + 8192) % 8192;
+    pid->dget = get;
+    int a = (pid->dget - pid->dlastget + 8192) % 8192;
     int b = 8192 - a;
-    if(a > b)
-    {
-        pid->Direction -= a;
+    if(a > 50 && b >50){
+        if(a > b)
+        {
+            pid->direction -= a / 1024;
+        }
+        else if(a < b)
+        {
+            pid->direction += b/ 1024;
+        }
     }
-    else if(a < b)
-    {
-        pid->Direction += b;
-    }
-    pid->set = set;
-    pid->errNOW = set - pid->Direction;
-    pid->p = pid->errNOW * pid->kp;
-    pid->i += pid->errNOW * pid->ki;
-    pid->d = (pid->errNOW - pid->errLAST) * pid->kd;
-    pid->out = pid->p + pid->i + pid->d;
-    pid->errLAST = pid->errNOW;
-    pid->lastget = pid->get;
-    clamp(&pid->out, pid->maxOut);
-    return pid->out;
+    pid->dset = set;
+    pid->derrNOW = set - pid->direction;
+    pid->dp = pid->derrNOW * pid->dkp;
+    pid->di += pid->derrNOW * pid->dki;
+    pid->dd = (pid->derrNOW - pid->derrLAST) * pid->dkd;
+    pid->dout = pid->dp + pid->di + pid->dd;
+    pid->derrLAST = pid->derrNOW;
+    pid->dlastget = pid->dget;
+    return pid->dout;
 }
 
-
+float PIDSpe(pid_t *pid, int get, int set)
+{
+    pid->sget = get;
+    pid->sset = set;
+    pid->serrNOW = set - get;
+    pid->sp = pid->serrNOW * pid->skp;
+    pid->si += pid->serrNOW * pid->ski;
+    clamp(&pid->si, 8000);
+    pid->sd = (pid->serrNOW - pid->serrLAST) * pid->skd;
+    pid->sout = pid->sp + pid->si + pid->sd;
+    pid->serrLAST = pid->serrNOW;
+    clamp(&pid->sout, pid->smaxOut);
+    return pid->sout;
+}
 
 int PIDcheck(pid_t *pid)
 {
-    return pid->Direction;
+    return pid->direction;
 }

@@ -6,11 +6,10 @@
 
 
 int check;
-
 CANTxFrame txmsg;
 CANRxFrame rxmsg;
-int motorSpeed[2];
-int motorDirection[2];
+int16_t motorSpeed[2];
+int16_t motorDirection[2];
 float SpeedResult[2] = {0, 0};
 float DirectionResult[2] = {0, 0};
 uint16_t rxcnt[4] = {0};
@@ -30,9 +29,8 @@ static THD_FUNCTION(can_rx_thd, p)
             // receiving rpm
             if (rxmsg.SID == 0x201)
             {
-                respondCnt++;
-                motorSpeed[0] = rxmsg.data8[0] << 8 | rxmsg.data8[1];
-                motorDirection[0] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
+                motorSpeed[0] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
+                motorDirection[0] = rxmsg.data8[0] << 8 | rxmsg.data8[1];
                 rxcnt[0]++;
             }
             // if (rxmsg.SID == 0x202)
@@ -55,7 +53,7 @@ static THD_FUNCTION(can_tx_thd, p)
         txmsg.IDE = CAN_IDE_STD;
         txmsg.RTR = CAN_RTR_DATA;
         txmsg.SID = 0x200;
-        setSpeed(0, 150000);
+        setSpeed(0, 15000);
         check = PIDcheck(&pidmotor[0]);
         
         canTransmitTimeout(&CAND1, CAN_ANY_MAILBOX, &txmsg, TIME_MS2I(1));
@@ -65,9 +63,10 @@ static THD_FUNCTION(can_tx_thd, p)
 
 void setSpeed(int i, int target)
 {
-    result[i] = PIDSet(&pidmotor[i], motorSpeed[i], target);
-    txmsg.data8[i * 2] = (int)result[i] >> 8;
-    txmsg.data8[i * 2 + 1] = (int)result[i] & 0xFF;
+    DirectionResult[i] = PIDDir(&pidmotor[i], motorDirection[i], target);
+    SpeedResult[i] = PIDSpe(&pidmotor[i], motorSpeed[i], DirectionResult[i]);
+    txmsg.data8[i * 2] = (int)SpeedResult[i] >> 8;
+    txmsg.data8[i * 2 + 1] = (int)SpeedResult[i] & 0xFF;
 }
 
 float motorSpeedGet(int i)
@@ -80,7 +79,8 @@ float motorSpeedGet(int i)
 
 void motorInit(void)
 {
-    PIDInit(&pidmotor[0], MAX_SPEED, 1, 0, 0);
+    PIDsInit(&pidmotor[0], MAX_SPEED, 10, 0.3, 25);
+    PIDdInit(&pidmotor[0], 1, 0, 0);
     canStart(&CAND1, &cancfg);
 
     chThdCreateStatic(can_rx_thd_wa,
