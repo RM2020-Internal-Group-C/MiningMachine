@@ -44,7 +44,7 @@ static void processRxData(void)
     rcCtrl.s2 = ((rxbuf[5] >> 4) & 0x0003);
 }
 
-static THD_WORKING_AREA(uart_dbus_thread_wa, 512);
+static THD_WORKING_AREA(uart_dbus_thread_wa, 128);
 static THD_FUNCTION(uart_dbus_thread, p)
 {
     (void)p;

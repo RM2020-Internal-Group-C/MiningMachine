@@ -60,7 +60,7 @@ int main(void)
     motorInit();
 
     // Initialize dbus
-    // RCInit();
+    RCInit();
 
 
 
@@ -71,12 +71,20 @@ int main(void)
 
     while (true)
     {
-        
+        if(RCGet()->s1 == 3){
+            setDistance(0,80000);
+        }
+        else if(RCGet()->s1 == 2){
+            setDistance(0,25000);
+        }
+        else{
+            setDistance(0,0);
+        }
         //movementControl(RCGet()->channel3, RCGet()->channel2, RCGet()->channel0);
         // rccheck = RCGet()->channel3*400/660;
         // PIDcheck1 = pidWheel[1].errNOW;
         // PIDcheck2 = pidWheel[1].set;
         // PIDcheck3 = pidWheel[1].get;
-        chThdSleepMilliseconds(5);
+        chThdSleepMilliseconds(1);
     }
 }

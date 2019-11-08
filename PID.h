@@ -1,15 +1,15 @@
 #ifndef __PID_H__
-
 #define __PID_H__
+#include <stdint.h>
 
 typedef struct
 {
     float dkp;
     float dki;
     float dkd;
-    int dset;
-    int dget;
-    int dlastget;
+    int16_t dset;
+    int16_t dget;
+    int16_t dlastget;
     float derrNOW;
     float derrLAST;
     int dout;
@@ -35,7 +35,7 @@ typedef struct
 void PIDdInit(pid_t *pid, float kp, float ki, float kd);
 void PIDsInit(pid_t *pid, int maxOut, float kp, float ki, float kd);
 
-int PIDDir(pid_t *pid, int get, int set);
+int PIDDir(pid_t *pid,int set);
 float PIDSpe(pid_t *pid, int get, int set);
 
 int PIDcheck(pid_t *pid);

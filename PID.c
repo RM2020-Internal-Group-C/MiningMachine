@@ -31,21 +31,8 @@ void PIDsInit(pid_t *pid, int maxOut, float kp, float ki, float kd)
 
 // float absp(float i) { return (i < 0) ? -i : i; }
 
-int PIDDir(pid_t *pid, int get, int set)
+int PIDDir(pid_t *pid,int set)
 {
-    pid->dget = get;
-    int a = (pid->dget - pid->dlastget + 8192) % 8192;
-    int b = 8192 - a;
-    if(pid->dget != pid->dlastget){
-        if(a > b)
-        {
-            pid->direction -= a / 1024;
-        }
-        else if(a < b)
-        {
-            pid->direction += b/ 1024;
-        }
-    }
     pid->dset = set;
     pid->derrNOW = set - pid->direction;
     pid->dp = pid->derrNOW * pid->dkp;
@@ -54,18 +41,15 @@ int PIDDir(pid_t *pid, int get, int set)
     pid->dd = (pid->derrNOW - pid->derrLAST) * pid->dkd;
     pid->dout = pid->dp + pid->di + pid->dd;
     pid->derrLAST = pid->derrNOW;
-    pid->dlastget = pid->dget;
-    if(pid->dout > 800 || pid->dout < -800)
-    {
+    if(pid->dout > 10 || pid->dout < -10){
         return pid->dout;
     }
     else
     {
         return 0;
     }
-
+    // return pid->dout;
     
-
 }
 
 float PIDSpe(pid_t *pid, int get, int set)
