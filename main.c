@@ -33,10 +33,6 @@ static const PWMConfig pwmcfg = {1000000,
                                  0,
                                  0};
 
-// i stands for the index of motor, respectively 0, 1, 2, 3; targetSpee
-
-
-
 
 int main(void)
 {
@@ -60,31 +56,42 @@ int main(void)
     motorInit();
 
     // Initialize dbus
-    RCInit();
+    // RCInit();
 
-
-
-    // PID Initialize  wheelStruct; maxOutputCurrent; kp; ki; kd
-
-    /***************************************************************
-     ****************************四轮***********************************/
 
     while (true)
     {
-        if(RCGet()->s1 == 3){
-            setDistance(0,80000);
+
+        // 20000 = 1cm
+        if(RCGet()->channel3 >= 600){
+            setDistance(0,20000 * (13.2)); // the position of the second box
         }
-        else if(RCGet()->s1 == 2){
-            setDistance(0,25000);
+        
+        else if(RCGet()->channel3 <= -600){
+            setDistance(0,20000 * (13.2 + 13.2)); // the position of the third box
         }
+
+        else if(RCGet()->channel2 >= 600){
+            setDistance(0,20000 * (13.2 + 13.2 + 12.2)); // the position of the fourth box
+        } 
+
         else{
-            setDistance(0,0);
+            setDistance(0,0); // the position of the first box
         }
-        //movementControl(RCGet()->channel3, RCGet()->channel2, RCGet()->channel0);
-        // rccheck = RCGet()->channel3*400/660;
-        // PIDcheck1 = pidWheel[1].errNOW;
-        // PIDcheck2 = pidWheel[1].set;
-        // PIDcheck3 = pidWheel[1].get;
+
+        if(RCGet()->s1 == 2){
+            setDistance(1,75000); // the grip position of the gripper
+        }
+        else if(RCGet()->s1 == 3){
+            setDistance(1,23000); // the pull position of the gripper
+        }
+        else
+        {
+            setDistance(1,0); // the initial position of the gripper
+        }
+        
+
+
         chThdSleepMilliseconds(1);
     }
 }

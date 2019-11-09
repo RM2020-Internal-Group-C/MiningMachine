@@ -4,16 +4,12 @@
 #include "dbus.h"
 #include "hal.h"
 
-
-int check;
-int cnt;
 static CANTxFrame txmsg;
 static CANRxFrame rxmsg;
 static int16_t motorSpeed[2];
 int16_t motorDirection[2];
 float SpeedResult[2] = {0, 0};
 float DirectionResult[2] = {0, 0};
-uint16_t rxcnt[4] = {0};
 static const CANConfig cancfg = {
     CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
     CAN_BTR_SJW(0) | CAN_BTR_TS2(1) | CAN_BTR_TS1(8) | CAN_BTR_BRP(2)};
@@ -32,11 +28,20 @@ static THD_FUNCTION(can_rx_thd, p)
             {
                 motorSpeed[0] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
                 motorDirection[0] = rxmsg.data8[0] << 8 | rxmsg.data8[1];
-                rxcnt[0]++;
                 pidmotor[0].dget = motorDirection[0];
                 int16_t a = (pidmotor[0].dget  - pidmotor[0].dlastget  + 8192 + 4096) % 8192 - 4096;
                 pidmotor[0].direction += a;
                 pidmotor[0].dlastget = pidmotor[0].dget;
+            }
+
+            if (rxmsg.SID == 0x202)
+            {
+                motorSpeed[1] = rxmsg.data8[2] << 8 | rxmsg.data8[3];
+                motorDirection[1] = rxmsg.data8[0] << 8 | rxmsg.data8[1];
+                pidmotor[1].dget = motorDirection[1];
+                int16_t a = (pidmotor[1].dget  - pidmotor[1].dlastget  + 8192 + 4096) % 8192 - 4096;
+                pidmotor[1].direction += a;
+                pidmotor[1].dlastget = pidmotor[1].dget;
             }
         }
     }
@@ -77,8 +82,10 @@ float motorSpeedGet(int i)
 
 void motorInit(void)
 {
-    PIDsInit(&pidmotor[0], MAX_SPEED, 10, 0.3, 25); // 10, 0.3, 25
-    PIDdInit(&pidmotor[0], 0.1, 0, 8);
+    PIDsInit(&pidmotor[0], 3500, 10, 0.28, 25);
+    PIDdInit(&pidmotor[0], 0.1, 0, 7);
+    PIDsInit(&pidmotor[1], 3500, 10, 0.28, 25);
+    PIDdInit(&pidmotor[1], 0.1, 0, 7);
     canStart(&CAND1, &cancfg);
     chThdCreateStatic(can_rx_thd_wa,
                       sizeof(can_rx_thd_wa),

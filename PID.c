@@ -29,7 +29,6 @@ void PIDsInit(pid_t *pid, int maxOut, float kp, float ki, float kd)
     pid->smaxOut = maxOut;
 }
 
-// float absp(float i) { return (i < 0) ? -i : i; }
 
 int PIDDir(pid_t *pid,int set)
 {
@@ -48,7 +47,6 @@ int PIDDir(pid_t *pid,int set)
     {
         return 0;
     }
-    // return pid->dout;
     
 }
 
